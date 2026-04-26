@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\LineReplyService;
+use App\Services\ChatGptService;
 
 class LineController extends Controller
 {
-    public function __construct(private LineReplyService $lineReplyService) {}
+    public function __construct(
+        private LineReplyService $lineReplyService,
+        private ChatGptService $chatGptService,
+    ) {}
 
     public function handle(Request $request)
     {
@@ -15,8 +19,9 @@ class LineController extends Controller
         $replyToken = $event['replyToken'] ?? null;
         $text = $event['message']['text'] ?? '';
 
-        if ($replyToken) {
-            $this->lineReplyService->reply($replyToken, '受け取りました！');
+        if ($replyToken && $text) {
+            $reply = $this->chatGptService->ask($text);
+            $this->lineReplyService->reply($replyToken, $reply);
         }
 
         return response()->json(['status' => 'ok']);
